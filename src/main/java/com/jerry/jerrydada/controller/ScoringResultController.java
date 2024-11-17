@@ -154,8 +154,6 @@ public class ScoringResultController {
             HttpServletRequest request) {
         long current = scoringResultQueryRequest.getCurrent();
         long size = scoringResultQueryRequest.getPageSize();
-        current = 0;
-        size = 5;
         // 限制爬虫
         ThrowUtils.throwIf(size > 20, ErrorCode.PARAMS_ERROR);
         Page<ScoringResult> scoringResultPage = scoringResultService.page(new Page<>(current, size),

@@ -1,5 +1,6 @@
 package com.jerry.jerrydada.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -114,6 +115,12 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question>
         List<QuestionVO> questionVOList = questionPage.getRecords().stream().map(question -> getQuestionVO(question, request)).collect(Collectors.toList());
         questionVOPage.setRecords(questionVOList);
         return questionVOPage;
+    }
+
+    @Override
+    public Question getByAppId(long appId) {
+        Wrapper<Question> wrapper = new QueryWrapper<Question>().eq("appId", appId);
+        return this.getOne(wrapper);
     }
 }
 

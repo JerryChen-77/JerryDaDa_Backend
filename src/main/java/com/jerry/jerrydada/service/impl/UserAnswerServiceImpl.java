@@ -49,19 +49,10 @@ public class UserAnswerServiceImpl extends ServiceImpl<UserAnswerMapper, UserAns
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         Long appId = userAnswer.getAppId();
-        String resultDesc = userAnswer.getResultDesc();
-        String resultName = userAnswer.getResultName();
+
         // 创建时，参数不能为空
         if (add) {
             ThrowUtils.throwIf(appId == null, ErrorCode.PARAMS_ERROR,"appId非法");
-            ThrowUtils.throwIf(StringUtils.isAnyBlank(resultName,resultDesc), ErrorCode.PARAMS_ERROR);
-        }
-        // 有参数则校验
-        if (StringUtils.isNotBlank(resultName) && resultName.length() > 80) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR, "结果名称过长");
-        }
-        if (StringUtils.isNotBlank(resultDesc) && resultDesc.length() > 8192) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR, "结果描述过长");
         }
         // 判断app是否存在
         if(appId!= null){

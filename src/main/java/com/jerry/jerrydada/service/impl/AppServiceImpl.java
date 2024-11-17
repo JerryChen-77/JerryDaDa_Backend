@@ -98,8 +98,8 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App>
             queryWrapper.and(wrapper -> wrapper.like("appName", searchText).or().like("appDesc", searchText));
         }
         // 模糊查询
-        queryWrapper.like(StringUtils.isNotBlank(appName), "appName", searchText);
-        queryWrapper.like(StringUtils.isNotBlank(appDesc), "appDesc", searchText);
+        queryWrapper.like(StringUtils.isNotBlank(appName), "appName", appName);
+        queryWrapper.like(StringUtils.isNotBlank(appDesc), "appDesc", appDesc);
         queryWrapper.like(StringUtils.isNotBlank(reviewMessage),"reviewMessage",reviewMessage);
         // 精确查询
         queryWrapper.eq(StringUtils.isNotBlank(appIcon), "appIcon", appIcon);

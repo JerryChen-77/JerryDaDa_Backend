@@ -15,9 +15,13 @@ import com.jerry.jerrydada.model.dto.userAnswer.UserAnswerAddRequest;
 import com.jerry.jerrydada.model.dto.userAnswer.UserAnswerEditRequest;
 import com.jerry.jerrydada.model.dto.userAnswer.UserAnswerQueryRequest;
 import com.jerry.jerrydada.model.dto.userAnswer.UserAnswerUpdateRequest;
+import com.jerry.jerrydada.model.entity.App;
 import com.jerry.jerrydada.model.entity.UserAnswer;
 import com.jerry.jerrydada.model.entity.User;
+import com.jerry.jerrydada.model.enums.ReviewStateEnum;
 import com.jerry.jerrydada.model.vo.UserAnswerVO;
+import com.jerry.jerrydada.scoring.ScoringStrategyExecutor;
+import com.jerry.jerrydada.service.AppService;
 import com.jerry.jerrydada.service.UserAnswerService;
 import com.jerry.jerrydada.service.UserService;
 import lombok.extern.slf4j.Slf4j;
@@ -26,6 +30,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
+import java.util.List;
 
 /**
  * 帖子接口
@@ -43,6 +48,12 @@ public class UserAnswerController {
     @Resource
     private UserService userService;
 
+    @Resource
+    private AppService appService;
+    @Resource
+    private ScoringStrategyExecutor scoringStrategyExecutor;
+
+
     private final static Gson GSON = new Gson();
 
     // region 增删改查
@@ -55,21 +66,40 @@ public class UserAnswerController {
      * @return
      */
     @PostMapping("/add")
-    public BaseResponse<Long> addUserAnswer(@RequestBody UserAnswerAddRequest userAnswerAddRequest, HttpServletRequest request) {
+    public BaseResponse<Long> addUserAnswer(@RequestBody UserAnswerAddRequest userAnswerAddRequest, HttpServletRequest request){
         if (userAnswerAddRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         UserAnswer userAnswer = new UserAnswer();
         BeanUtils.copyProperties(userAnswerAddRequest, userAnswer);
         // 数组转JSON
+        List<String> choices = userAnswerAddRequest.getChoices();
         userAnswer.setChoices(JSONUtil.toJsonStr(userAnswerAddRequest.getChoices()));
-        //  添加应用的校验
+        // 判断app是否存在
+        App app = appService.getById(userAnswer.getAppId());
+        ThrowUtils.throwIf(app == null, ErrorCode.NOT_FOUND_ERROR);
+        if(!ReviewStateEnum.getEnumByValue(app.getReviewStatus()).equals(ReviewStateEnum.PASS)){
+            throw new BusinessException(ErrorCode.NO_AUTH_ERROR,"该应用未通过审核");
+        }
+        //  填充默认值用户
         userAnswerService.validUserAnswer(userAnswer, true);
         User loginUser = userService.getLoginUser(request);
         userAnswer.setUserId(loginUser.getId());
+        // 写入数据库
         boolean result = userAnswerService.save(userAnswer);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
+        // 新写入数据库的数据
         long newUserAnswerId = userAnswer.getId();
+        // 调用评分模块
+        try {
+            // 测评一下，并且更新
+            UserAnswer newAnswer = scoringStrategyExecutor.doScore(choices, app);
+            newAnswer.setId(newUserAnswerId);
+            userAnswerService.updateById(newAnswer);
+        }catch (Exception e){
+            e.printStackTrace();
+            throw new BusinessException(ErrorCode.OPERATION_ERROR,"评分错误");
+        }
         return ResultUtils.success(newUserAnswerId);
     }
 
@@ -154,8 +184,6 @@ public class UserAnswerController {
                                                                    HttpServletRequest request) {
         long current = userAnswerQueryRequest.getCurrent();
         long size = userAnswerQueryRequest.getPageSize();
-        current = 0;
-        size = 5;
         // 限制爬虫
         ThrowUtils.throwIf(size > 20, ErrorCode.PARAMS_ERROR);
         Page<UserAnswer> userAnswerPage = userAnswerService.page(new Page<>(current, size),
