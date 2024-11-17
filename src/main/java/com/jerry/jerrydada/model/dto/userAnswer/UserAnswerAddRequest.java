@@ -9,6 +9,10 @@ import java.util.List;
 public class UserAnswerAddRequest {
 
     /**
+     * id 保证幂等性
+     */
+    private Long id;
+    /**
      * 应用 id
      */
     private Long appId;

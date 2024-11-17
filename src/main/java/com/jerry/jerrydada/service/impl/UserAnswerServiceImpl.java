@@ -49,9 +49,10 @@ public class UserAnswerServiceImpl extends ServiceImpl<UserAnswerMapper, UserAns
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         Long appId = userAnswer.getAppId();
-
+        Long id = userAnswer.getId();
         // 创建时，参数不能为空
         if (add) {
+            ThrowUtils.throwIf(id == null, ErrorCode.PARAMS_ERROR, "新增时id不能为空");
             ThrowUtils.throwIf(appId == null, ErrorCode.PARAMS_ERROR,"appId非法");
         }
         // 判断app是否存在

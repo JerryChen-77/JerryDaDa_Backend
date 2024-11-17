@@ -1,5 +1,6 @@
 package com.jerry.jerrydada.controller;
 
+import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -9,6 +10,7 @@ import com.jerry.jerrydada.common.BaseResponse;
 import com.jerry.jerrydada.common.DeleteRequest;
 import com.jerry.jerrydada.common.ErrorCode;
 import com.jerry.jerrydada.common.ResultUtils;
+import com.jerry.jerrydada.config.VipSchedulerConfig;
 import com.jerry.jerrydada.constant.UserConstant;
 import com.jerry.jerrydada.exception.BusinessException;
 import com.jerry.jerrydada.exception.ThrowUtils;
@@ -24,6 +26,7 @@ import com.jerry.jerrydada.service.QuestionService;
 import com.jerry.jerrydada.service.UserService;
 import com.zhipu.oapi.service.v4.model.ModelData;
 import io.reactivex.Flowable;
+import io.reactivex.Scheduler;
 import io.reactivex.schedulers.Schedulers;
 import lombok.extern.slf4j.Slf4j;
 import org.bouncycastle.asn1.esf.SPuri;
@@ -58,6 +61,10 @@ public class QuestionController {
 
     @Resource
     private AiManager aiManager;
+
+    @Resource
+    private Scheduler vipScheduler;
+
 
     private final static Gson GSON = new Gson();
 
@@ -255,6 +262,12 @@ public class QuestionController {
         return ResultUtils.success(result);
     }
 
+
+    @GetMapping("/generate/id")
+    public BaseResponse<Long> generateUniqueUserAnswerId() {
+        return ResultUtils.success(IdUtil.getSnowflakeNextId());
+    }
+
     // region AI生成功能
     private static final String GENERATE_QUESTION_SYSTEM_PROMPT = "你是一位严谨的出题专家，我会给你如下信息：\n" +
             "```\n" +
@@ -335,6 +348,7 @@ public class QuestionController {
         AtomicInteger flag = new AtomicInteger(0);
         // 拼接完整题目
         StringBuilder contentBuilder = new StringBuilder();
+        // 流式处理题目
         modelDataFlowable
                 .observeOn(Schedulers.io())
                 .map(chunk ->chunk.getChoices().get(0).getDelta().getContent())
@@ -377,4 +391,76 @@ public class QuestionController {
     }
 
     // endregion
+    @Deprecated
+    @GetMapping("/ai_generate/sse/test")
+    public SseEmitter aiGenerateQuestionSSETest(AiGenerateQuestionRequest aiGenerateQuestionRequest,boolean isVip) {
+        if(aiGenerateQuestionRequest == null) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        // 获取参数
+        Long appId = aiGenerateQuestionRequest.getAppId();
+        int questionNumber = aiGenerateQuestionRequest.getQuestionNumber();
+        int optionNumber = aiGenerateQuestionRequest.getOptionNumber();
+        App app = appService.getById(appId);
+        if(app == null){
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR,"应用不存在");
+        }
+        // 封装用户参数
+        String userMessage = getGenerateQuestionUserMessage(app, questionNumber, optionNumber);
+        // 建立SSE 连接对象,0表示永不超时
+        SseEmitter sseEmitter = new SseEmitter(0L);
+        // AI生成题目,SSE流式返回
+        Flowable<ModelData> modelDataFlowable = aiManager.doStreamRequest(GENERATE_QUESTION_SYSTEM_PROMPT, userMessage,null);
+        // 左括号计数器，除了默认值外，当回归为 0 时，表示左括号等于右括号，可以截取
+        AtomicInteger flag = new AtomicInteger(0);
+        // 拼接完整题目
+        StringBuilder contentBuilder = new StringBuilder();
+        // 流式处理题目
+        // 默认全局线程池
+        Scheduler scheduler = Schedulers.single();
+        // 如果是vip用户，使用vip线程池
+        if (isVip) {
+             scheduler= vipScheduler;
+        }
+        modelDataFlowable
+                .observeOn(scheduler)
+                .map(chunk ->chunk.getChoices().get(0).getDelta().getContent())
+                .map(message ->message.replaceAll("\\s",""))
+                .filter(StrUtil::isNotBlank)
+                .flatMap(message ->{
+                    List<Character> charList = new ArrayList<>();
+                    for(char c: message.toCharArray()){
+                        charList.add(c);
+                    }
+                    return Flowable.fromIterable(charList);
+                })//分流
+                .doOnNext(c -> {
+                    {
+                        // 识别第一个 [ 表示开始 AI 传输 json 数据，打开 flag 开始拼接 json 数组
+                        if (c == '{') {
+                            flag.addAndGet(1);
+                        }
+                        if (flag.get() > 0) {
+                            contentBuilder.append(c);
+                        }
+                        if (c == '}') {
+                            flag.addAndGet(-1);
+                            if (flag.get() == 0) {
+                                // 累积单套题目满足 json 格式后，sse 推送至前端
+                                // sse 需要压缩成当行 json，sse 无法识别换行
+                                sseEmitter.send(JSONUtil.toJsonStr(contentBuilder.toString()));
+                                // 清空 StringBuilder
+                                contentBuilder.setLength(0);
+                            }
+                        }
+                    }
+                })
+                .doOnError((e)->{
+                    log.error("AI生成题目失败");
+                })
+                .doOnComplete(sseEmitter::complete)
+                .subscribe();
+        return sseEmitter;
+    }
+
 }
