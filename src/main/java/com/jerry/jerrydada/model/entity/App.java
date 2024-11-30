@@ -30,6 +30,11 @@ public class App implements Serializable {
     private String appDesc;
 
     /**
+     * 点赞数
+     */
+    private Integer thumbNum;
+
+    /**
      * 应用图标
      */
     private String appIcon;

@@ -17,6 +17,10 @@ public class AppVO {
      * 应用描述
      */
     private String appDesc;
+    /**
+     * 点赞数
+     */
+    private Integer thumbNum;
 
     /**
      * 应用图标

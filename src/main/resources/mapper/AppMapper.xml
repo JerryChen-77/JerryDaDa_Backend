@@ -10,6 +10,7 @@
             <result property="appDesc" column="appDesc" jdbcType="VARCHAR"/>
             <result property="appIcon" column="appIcon" jdbcType="VARCHAR"/>
             <result property="appType" column="appType" jdbcType="TINYINT"/>
+            <result property="thumbNum" column="thumbNum" jdbcType="INTEGER"/>
             <result property="scoringStrategy" column="scoringStrategy" jdbcType="TINYINT"/>
             <result property="reviewStatus" column="reviewStatus" jdbcType="INTEGER"/>
             <result property="reviewMessage" column="reviewMessage" jdbcType="VARCHAR"/>
@@ -26,6 +27,6 @@
         appIcon,appType,scoringStrategy,
         reviewStatus,reviewMessage,reviewerId,
         reviewTime,userId,createTime,
-        updateTime,isDelete
+        updateTime,isDelete,thumbNum
     </sql>
 </mapper>
