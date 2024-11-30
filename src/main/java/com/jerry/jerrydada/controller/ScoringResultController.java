@@ -11,13 +11,16 @@ import com.jerry.jerrydada.common.ResultUtils;
 import com.jerry.jerrydada.constant.UserConstant;
 import com.jerry.jerrydada.exception.BusinessException;
 import com.jerry.jerrydada.exception.ThrowUtils;
-import com.jerry.jerrydada.model.dto.scoringResult.ScoringResultAddRequest;
-import com.jerry.jerrydada.model.dto.scoringResult.ScoringResultEditRequest;
-import com.jerry.jerrydada.model.dto.scoringResult.ScoringResultQueryRequest;
-import com.jerry.jerrydada.model.dto.scoringResult.ScoringResultUpdateRequest;
+import com.jerry.jerrydada.manager.AiManager;
+import com.jerry.jerrydada.model.dto.question.AiGenerateQuestionRequest;
+import com.jerry.jerrydada.model.dto.question.QuestionContentDTO;
+import com.jerry.jerrydada.model.dto.scoringResult.*;
+import com.jerry.jerrydada.model.entity.App;
 import com.jerry.jerrydada.model.entity.ScoringResult;
 import com.jerry.jerrydada.model.entity.User;
+import com.jerry.jerrydada.model.enums.AppTypeEnum;
 import com.jerry.jerrydada.model.vo.ScoringResultVO;
+import com.jerry.jerrydada.service.AppService;
 import com.jerry.jerrydada.service.ScoringResultService;
 import com.jerry.jerrydada.service.UserService;
 import lombok.extern.slf4j.Slf4j;
@@ -26,6 +29,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
+import java.util.List;
 
 /**
  * 帖子接口
@@ -43,6 +47,11 @@ public class ScoringResultController {
     @Resource
     private UserService userService;
 
+    @Resource
+    private AppService appService;
+
+    @Resource
+    private AiManager aiManager;
     private final static Gson GSON = new Gson();
 
     // region 增删改查
@@ -151,7 +160,7 @@ public class ScoringResultController {
      */
     @PostMapping("/list/page/vo")
     public BaseResponse<Page<ScoringResultVO>> listScoringResultVOByPage(@RequestBody ScoringResultQueryRequest scoringResultQueryRequest,
-            HttpServletRequest request) {
+                                                                         HttpServletRequest request) {
         long current = scoringResultQueryRequest.getCurrent();
         long size = scoringResultQueryRequest.getPageSize();
         // 限制爬虫
@@ -170,7 +179,7 @@ public class ScoringResultController {
      */
     @PostMapping("/my/list/page/vo")
     public BaseResponse<Page<ScoringResultVO>> listMyScoringResultVOByPage(@RequestBody ScoringResultQueryRequest scoringResultQueryRequest,
-            HttpServletRequest request) {
+                                                                           HttpServletRequest request) {
         if (scoringResultQueryRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
@@ -219,5 +228,64 @@ public class ScoringResultController {
         boolean result = scoringResultService.updateById(scoringResult);
         return ResultUtils.success(result);
     }
+
+
+    private static final String GENERATE_SCORING_RESULT_SYSTEM_PROMPT = "你是一位严谨的专家，能够给出题目评分结果信息，我会给你如下信息：\n" +
+            "```\n" +
+            "应用名称，\n" +
+            "【【【应用描述】】】，\n" +
+            "应用类别，\n" +
+            "```\n" +
+            "\n" +
+            "请你根据上述信息，按照以下步骤来给出评分结果，注意！是对给你的应用，给出你对评分结果：\n" +
+            "1. 要求：评分结果名称尽量简短，结果描述尽量完整，且生动\n" +
+            "2. 严格按照下面的 json 格式输出，不要包含其他的字段！\n" +
+            "```\n" +
+            "    [\n" +
+            "        {\n" +
+            "        resultName:\"结果名称\",\n" +
+            "        resultDesc:\"结果描述\",\n" +
+            "        resultScoringRange:\"评分范围\",\n" +
+            "        }\n" +
+            "    ]\n" +
+            "```\n" +
+            "resultName 是结果名称，resultDesc 是结果描述，resultScoringRange是评分范围\n" +
+            "3. 返回的评分范围在0—100之间,均匀分布，四个或者五个结果，评分范围填写最大值，如0-25则填写25" +
+            "4. 返回的题目列表格式必须为 JSON 字符串\n";
+
+
+    private String getGenerateScoringResultUserMessage(App app) {
+        StringBuilder userMessage = new StringBuilder();
+        userMessage.append(app.getAppName()).append("\n");
+        userMessage.append(app.getAppDesc()).append("\n");
+        userMessage.append(AppTypeEnum.getEnumByValue(app.getAppType()).getText() + "类").append("\n");
+        return userMessage.toString();
+    }
+
+    @PostMapping("/ai_generate_scoring_result")
+    public BaseResponse<List<ScoringResultVO>> aiGenerateScoringResult(@RequestBody AiGenerateScoringResultRequest aiGenerateScoringResultRequest) {
+        if (aiGenerateScoringResultRequest == null) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        // 获取参数
+        Long appId = aiGenerateScoringResultRequest.getAppId();
+
+        App app = appService.getById(appId);
+        if (app == null) {
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "应用不存在");
+        }
+        // 封装用户参数
+        String userMessage = getGenerateScoringResultUserMessage(app);
+        // AI生成题目
+        String json = aiManager.doSyncUNSTABLERequest(GENERATE_SCORING_RESULT_SYSTEM_PROMPT, userMessage);
+        int start = json.indexOf("[");
+        int end = json.lastIndexOf("]");
+        String result = json.substring(start, end + 1);
+        List<ScoringResultVO> list = JSONUtil.toList(result, ScoringResultVO.class);
+        // 插入数据库中
+        log.info("AI生成的评分" + list.toString());
+        return ResultUtils.success(list);
+    }
+
 
 }

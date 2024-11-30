@@ -22,7 +22,7 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://localhost:3306/jerrydada
     username: root
-    password: xxxxxx
+    password: 082677
   # Redis 配置
   # todo 需替换配置，然后取消注释
   redis:
@@ -69,4 +69,4 @@ cos:
     region: xxx
     bucket: xxx
 ai:
-  apiKey: xxxxxx
+  apiKey: c17de767fdef6f1ee79355b19cb443e6.480LenGbj2xMdHCb

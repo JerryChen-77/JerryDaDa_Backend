@@ -289,6 +289,8 @@ public class QuestionController {
             "4. 返回的题目列表格式必须为 JSON 数组\n";
 
 
+
+
     private String getGenerateQuestionUserMessage(App app, int questionNumber, int optionNumber) {
         StringBuilder userMessage = new StringBuilder();
         userMessage.append(app.getAppName()).append("\n");
