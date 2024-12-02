@@ -7,69 +7,11 @@ create database if not exists my_db;
 -- 切换库
 use my_db;
 
--- 用户表
-create table if not exists user
+-- auto-generated definition
+create table app
 (
-    id           bigint auto_increment comment 'id' primary key,
-    userAccount  varchar(256)                           not null comment '账号',
-    userPassword varchar(512)                           not null comment '密码',
-    unionId      varchar(256)                           null comment '微信开放平台id',
-    mpOpenId     varchar(256)                           null comment '公众号openId',
-    userName     varchar(256)                           null comment '用户昵称',
-    userAvatar   varchar(1024)                          null comment '用户头像',
-    userProfile  varchar(512)                           null comment '用户简介',
-    userRole     varchar(256) default 'user'            not null comment '用户角色：user/admin/ban',
-    createTime   datetime     default CURRENT_TIMESTAMP not null comment '创建时间',
-    updateTime   datetime     default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '更新时间',
-    isDelete     tinyint      default 0                 not null comment '是否删除',
-    index idx_unionId (unionId)
-) comment '用户' collate = utf8mb4_unicode_ci;
-
--- 帖子表
-create table if not exists post
-(
-    id         bigint auto_increment comment 'id' primary key,
-    title      varchar(512)                       null comment '标题',
-    content    text                               null comment '内容',
-    tags       varchar(1024)                      null comment '标签列表（json 数组）',
-    thumbNum   int      default 0                 not null comment '点赞数',
-    favourNum  int      default 0                 not null comment '收藏数',
-    userId     bigint                             not null comment '创建用户 id',
-    createTime datetime default CURRENT_TIMESTAMP not null comment '创建时间',
-    updateTime datetime default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '更新时间',
-    isDelete   tinyint  default 0                 not null comment '是否删除',
-    index idx_userId (userId)
-) comment '帖子' collate = utf8mb4_unicode_ci;
-
--- 帖子点赞表（硬删除）
-create table if not exists post_thumb
-(
-    id         bigint auto_increment comment 'id' primary key,
-    postId     bigint                             not null comment '帖子 id',
-    userId     bigint                             not null comment '创建用户 id',
-    createTime datetime default CURRENT_TIMESTAMP not null comment '创建时间',
-    updateTime datetime default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '更新时间',
-    index idx_postId (postId),
-    index idx_userId (userId)
-) comment '帖子点赞';
-
--- 帖子收藏表（硬删除）
-create table if not exists post_favour
-(
-    id         bigint auto_increment comment 'id' primary key,
-    postId     bigint                             not null comment '帖子 id',
-    userId     bigint                             not null comment '创建用户 id',
-    createTime datetime default CURRENT_TIMESTAMP not null comment '创建时间',
-    updateTime datetime default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '更新时间',
-    index idx_postId (postId),
-    index idx_userId (userId)
-) comment '帖子收藏';
-
-
--- 应用表
-create table if not exists app
-(
-    id              bigint auto_increment comment 'id' primary key,
+    id              bigint auto_increment comment 'id'
+        primary key,
     appName         varchar(128)                       not null comment '应用名',
     appDesc         varchar(2048)                      null comment '应用描述',
     appIcon         varchar(1024)                      null comment '应用图标',
@@ -83,28 +25,55 @@ create table if not exists app
     createTime      datetime default CURRENT_TIMESTAMP not null comment '创建时间',
     updateTime      datetime default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '更新时间',
     isDelete        tinyint  default 0                 not null comment '是否删除',
-    index idx_appName (appName)
-) comment '应用' collate = utf8mb4_unicode_ci;
+    thumbNum        int      default 0                 null comment '点赞数'
+)
+    comment '应用' collate = utf8mb4_unicode_ci;
 
+create index idx_appName
+    on app (appName);
 
--- 题目表
-create table if not exists question
+-- auto-generated definition
+create table app_thumb
 (
-    id              bigint auto_increment comment 'id' primary key,
+    id         bigint auto_increment comment 'id'
+        primary key,
+    appId      bigint                             not null comment '应用 id',
+    userId     bigint                             not null comment '用户 id',
+    createTime datetime default CURRENT_TIMESTAMP not null comment '创建时间',
+    updateTime datetime default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '更新时间'
+)
+    comment '应用点赞';
+
+create index idx_appId
+    on app_thumb (appId)
+    comment 'appId索引';
+
+create index idx_userId
+    on app_thumb (userId);
+
+-- auto-generated definition
+create table question
+(
+    id              bigint auto_increment comment 'id'
+        primary key,
     questionContent text                               null comment '题目内容（json格式）',
     appId           bigint                             not null comment '应用 id',
     userId          bigint                             not null comment '创建用户 id',
     createTime      datetime default CURRENT_TIMESTAMP not null comment '创建时间',
     updateTime      datetime default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '更新时间',
-    isDelete        tinyint  default 0                 not null comment '是否删除',
-    index idx_appId (appId)
-) comment '题目' collate = utf8mb4_unicode_ci;
+    isDelete        tinyint  default 0                 not null comment '是否删除'
+)
+    comment '题目' collate = utf8mb4_unicode_ci;
+
+create index idx_appId
+    on question (appId);
 
 
--- 评分结果表
-create table if not exists scoring_result
+-- auto-generated definition
+create table scoring_result
 (
-    id               bigint auto_increment comment 'id' primary key,
+    id               bigint auto_increment comment 'id'
+        primary key,
     resultName       varchar(128)                       not null comment '结果名称，如物流师',
     resultDesc       text                               null comment '结果描述',
     resultPicture    varchar(1024)                      null comment '结果图片',
@@ -114,15 +83,42 @@ create table if not exists scoring_result
     userId           bigint                             not null comment '创建用户 id',
     createTime       datetime default CURRENT_TIMESTAMP not null comment '创建时间',
     updateTime       datetime default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '更新时间',
-    isDelete         tinyint  default 0                 not null comment '是否删除',
-    index idx_appId (appId)
-) comment '评分结果' collate = utf8mb4_unicode_ci;
+    isDelete         tinyint  default 0                 not null comment '是否删除'
+)
+    comment '评分结果' collate = utf8mb4_unicode_ci;
+
+create index idx_appId
+    on scoring_result (appId);
 
 
--- 用户答题记录表
-create table if not exists user_answer
+-- auto-generated definition
+create table user
 (
-    id              bigint auto_increment primary key,
+    id           bigint auto_increment comment 'id'
+        primary key,
+    userAccount  varchar(256)                           not null comment '账号',
+    userPassword varchar(512)                           not null comment '密码',
+    unionId      varchar(256)                           null comment '微信开放平台id',
+    mpOpenId     varchar(256)                           null comment '公众号openId',
+    userName     varchar(256)                           null comment '用户昵称',
+    userAvatar   varchar(1024)                          null comment '用户头像',
+    userProfile  varchar(512)                           null comment '用户简介',
+    userRole     varchar(256) default 'user'            not null comment '用户角色：user/admin/ban',
+    createTime   datetime     default CURRENT_TIMESTAMP not null comment '创建时间',
+    updateTime   datetime     default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '更新时间',
+    isDelete     tinyint      default 0                 not null comment '是否删除'
+)
+    comment '用户' collate = utf8mb4_unicode_ci;
+
+create index idx_unionId
+    on user (unionId);
+
+
+-- auto-generated definition
+create table user_answer
+(
+    id              bigint auto_increment
+        primary key,
     appId           bigint                             not null comment '应用 id',
     appType         tinyint  default 0                 not null comment '应用类型（0-得分类，1-角色测评类）',
     scoringStrategy tinyint  default 0                 not null comment '评分策略（0-自定义，1-AI）',
@@ -135,19 +131,14 @@ create table if not exists user_answer
     userId          bigint                             not null comment '用户 id',
     createTime      datetime default CURRENT_TIMESTAMP not null comment '创建时间',
     updateTime      datetime default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '更新时间',
-    isDelete        tinyint  default 0                 not null comment '是否删除',
-    index idx_appId (appId),
-    index idx_userId (userId)
-) comment '用户答题记录' collate = utf8mb4_unicode_ci;
+    isDelete        tinyint  default 0                 not null comment '是否删除'
+)
+    comment '用户答题记录' collate = utf8mb4_unicode_ci;
 
--- 应用点赞表（硬删除）
-create table if not exists app_thumb
-(
-    id         bigint auto_increment comment 'id' primary key,
-    appId     bigint                             not null comment '应用 id',
-    userId     bigint                             not null comment '用户 id',
-    createTime datetime default CURRENT_TIMESTAMP not null comment '创建时间',
-    updateTime datetime default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '更新时间',
-    index idx_postId (appId),
-    index idx_userId (userId)
-) comment '帖子点赞';
+create index idx_appId
+    on user_answer (appId);
+
+create index idx_userId
+    on user_answer (userId);
+
+

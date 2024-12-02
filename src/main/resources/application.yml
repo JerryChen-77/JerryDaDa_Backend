@@ -64,9 +64,9 @@ mybatis-plus:
 # todo 需替换配置
 cos:
   client:
-    accessKey: AKIDGPMhCaoBVebpwqgNvJWYtOl4DF6aMxRj
-    secretKey: DJExUp1GQOBnJG2d7HF0Xr3Pbwcr5B90
-    region: ap-shanghai
-    bucket: jerrydada-17-1329436283
+    accessKey: xxx
+    secretKey: xxx
+    region: xxx
+    bucket: xxx
 ai:
-  apiKey: c17de767fdef6f1ee79355b19cb443e6.480LenGbj2xMdHCb
+  apiKey: xxx
