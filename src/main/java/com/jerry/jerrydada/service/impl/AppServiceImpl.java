@@ -109,7 +109,6 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App>
         queryWrapper.eq(ObjectUtils.isNotEmpty(userId),"userId",userId);
         queryWrapper.eq(ObjectUtils.isNotEmpty(reviewStatus),"reviewStatus",reviewStatus);
         queryWrapper.eq(ObjectUtils.isNotEmpty(reviewerId),"reviewerId",reviewerId);
-
         // 排序规则
         queryWrapper.orderBy(SqlUtils.validSortField(sortField),
                 sortOrder.equals(CommonConstant.SORT_ORDER_ASC),

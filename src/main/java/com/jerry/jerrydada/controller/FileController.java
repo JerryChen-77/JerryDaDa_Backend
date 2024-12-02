@@ -20,14 +20,16 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+
 
 /**
  * 文件接口
  *
  * @author <a href="https://github.com/JerryChen-77">JerryChen</a>
  */
-//@RestController
+@RestController
 @RequestMapping("/file")
 @Slf4j
 public class FileController {
@@ -51,6 +53,7 @@ public class FileController {
             UploadFileRequest uploadFileRequest, HttpServletRequest request) {
         String biz = uploadFileRequest.getBiz();
         FileUploadBizEnum fileUploadBizEnum = FileUploadBizEnum.getEnumByValue(biz);
+
         if (fileUploadBizEnum == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }

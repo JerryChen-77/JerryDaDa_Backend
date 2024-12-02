@@ -4,7 +4,10 @@ import com.qcloud.cos.COSClient;
 import com.qcloud.cos.model.PutObjectRequest;
 import com.qcloud.cos.model.PutObjectResult;
 import com.jerry.jerrydada.config.CosClientConfig;
+import org.springframework.stereotype.Component;
+
 import java.io.File;
+import java.net.URL;
 import javax.annotation.Resource;
 
 /**
@@ -12,7 +15,7 @@ import javax.annotation.Resource;
  *
  * @author <a href="https://github.com/JerryChen-77">JerryChen</a>
  */
-//@Component
+@Component
 public class CosManager {
 
     @Resource
@@ -46,4 +49,5 @@ public class CosManager {
                 file);
         return cosClient.putObject(putObjectRequest);
     }
+
 }

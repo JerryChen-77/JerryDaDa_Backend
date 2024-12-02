@@ -6,15 +6,17 @@ import com.qcloud.cos.auth.BasicCOSCredentials;
 import com.qcloud.cos.auth.COSCredentials;
 import com.qcloud.cos.region.Region;
 import lombok.Data;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
 /**
  * 腾讯云对象存储客户端
  *
  * @author <a href="https://github.com/JerryChen-77">JerryChen</a>
  */
-//@Configuration
-//@ConfigurationProperties(prefix = "cos.client")
+@Configuration
+@ConfigurationProperties(prefix = "cos.client")
 @Data
 public class CosClientConfig {
 

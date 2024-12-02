@@ -144,10 +144,10 @@ create table if not exists user_answer
 create table if not exists app_thumb
 (
     id         bigint auto_increment comment 'id' primary key,
-    addId     bigint                             not null comment '应用 id',
+    appId     bigint                             not null comment '应用 id',
     userId     bigint                             not null comment '用户 id',
     createTime datetime default CURRENT_TIMESTAMP not null comment '创建时间',
     updateTime datetime default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '更新时间',
-    index idx_postId (addId),
+    index idx_postId (appId),
     index idx_userId (userId)
 ) comment '帖子点赞';
