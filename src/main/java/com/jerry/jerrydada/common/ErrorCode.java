@@ -6,7 +6,6 @@ package com.jerry.jerrydada.common;
  * @author <a href="https://github.com/JerryChen-77">JerryChen</a>
  */
 public enum ErrorCode {
-
     SUCCESS(0, "ok"),
     PARAMS_ERROR(40000, "请求参数错误"),
     NOT_LOGIN_ERROR(40100, "未登录"),

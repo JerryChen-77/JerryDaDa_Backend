@@ -7,7 +7,6 @@ import com.zhipu.oapi.Constants;
 import com.zhipu.oapi.service.v4.model.*;
 import io.reactivex.Flowable;
 import org.springframework.stereotype.Component;
-
 import javax.annotation.Resource;
 import java.util.ArrayList;
 import java.util.List;
@@ -106,7 +105,6 @@ public class AiManager {
      */
     public String doRequest(List<ChatMessage> messages,Boolean stream,Float temperature){
         // 构造请求
-
         ChatCompletionRequest chatCompletionRequest = ChatCompletionRequest.builder()
                 .model(Constants.ModelChatGLM4)
                 .stream(stream)
@@ -122,5 +120,4 @@ public class AiManager {
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "AI调用失败");
         }
     }
-
 }

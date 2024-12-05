@@ -98,8 +98,6 @@ create table user
         primary key,
     userAccount  varchar(256)                           not null comment '账号',
     userPassword varchar(512)                           not null comment '密码',
-    unionId      varchar(256)                           null comment '微信开放平台id',
-    mpOpenId     varchar(256)                           null comment '公众号openId',
     userName     varchar(256)                           null comment '用户昵称',
     userAvatar   varchar(1024)                          null comment '用户头像',
     userProfile  varchar(512)                           null comment '用户简介',
@@ -110,8 +108,7 @@ create table user
 )
     comment '用户' collate = utf8mb4_unicode_ci;
 
-create index idx_unionId
-    on user (unionId);
+
 
 
 -- auto-generated definition
